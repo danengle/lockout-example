@@ -48,6 +48,10 @@ class User < ActiveRecord::Base
     write_attribute :email, (value ? value.downcase : nil)
   end
 
+  def admin?
+    self.role == 'admin'
+  end
+  
   protected
     
     def make_activation_code

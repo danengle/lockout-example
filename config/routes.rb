@@ -1,4 +1,7 @@
 ActionController::Routing::Routes.draw do |map|
+  map.root :controller => 'posts'
+  map.resources :posts
+
   map.root :controller => 'welcome'
 
   map.logout '/logout', :controller => 'sessions', :action => 'destroy'
