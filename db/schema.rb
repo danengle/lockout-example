@@ -9,7 +9,16 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20090316215850) do
+ActiveRecord::Schema.define(:version => 20090317031203) do
+
+  create_table "login_attempts", :force => true do |t|
+    t.string   "remote_ip"
+    t.string   "user_agent"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "login_attempts", ["remote_ip"], :name => "index_login_attempts_on_remote_ip"
 
   create_table "posts", :force => true do |t|
     t.string   "title"
@@ -17,6 +26,14 @@ ActiveRecord::Schema.define(:version => 20090316215850) do
     t.datetime "created_at"
     t.datetime "updated_at"
   end
+
+  create_table "restricted_ips", :force => true do |t|
+    t.string   "remote_ip"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "restricted_ips", ["remote_ip"], :name => "index_restricted_ips_on_remote_ip"
 
   create_table "users", :force => true do |t|
     t.string   "login",                     :limit => 40

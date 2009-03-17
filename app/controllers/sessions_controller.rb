@@ -1,6 +1,7 @@
 # This controller handles the login/logout function of the site.  
 class SessionsController < ApplicationController
 
+  before_filter :check_restricted_ips, :only => :create
   # render new.rhtml
   def new
   end
@@ -14,15 +15,23 @@ class SessionsController < ApplicationController
       # button. Uncomment if you understand the tradeoffs.
       # reset_session
       self.current_user = user
+      counts = LoginAttempt.find(:all, :conditions => { :remote_ip => request.remote_ip })
+      LoginAttempt.delete(counts) unless counts.blank?
       new_cookie_flag = (params[:remember_me] == "1")
       handle_remember_cookie! new_cookie_flag
-      redirect_back_or_default('/')
       flash[:notice] = "Logged in successfully"
+      redirect_back_or_default(root_path)
     else
-      note_failed_signin
       @login       = params[:login]
       @remember_me = params[:remember_me]
-      render :action => 'new'
+      # note_failed_signin
+      unless last_login_attempt?
+        flash[:notice] = "Could not log you in with '#{@login}'"
+        render :action => 'new'
+      else
+        flash[:error] = "your ip is banned"
+        redirect_to root_path
+      end
     end
   end
 
@@ -33,9 +42,18 @@ class SessionsController < ApplicationController
   end
 
 protected
-  # Track failed login attempts
-  def note_failed_signin
-    flash[:error] = "Couldn't log you in as '#{params[:login]}'"
-    logger.warn "Failed login for '#{params[:login]}' from #{request.remote_ip} at #{Time.now.utc}"
+
+  def last_login_attempt?
+    counts = LoginAttempt.find(:all, :conditions => { :remote_ip => request.remote_ip })
+    if !counts.blank? && counts.size >= 3
+      restriction = RestrictedIp.create(:remote_ip => request.remote_ip)
+      # maybe not best to destroy them all, for keeping records sake
+      LoginAttempt.delete(counts)
+      true
+    else
+      attempt = LoginAttempt.create(:remote_ip => request.remote_ip, :user_agent => request.user_agent)
+      false
+    end
   end
+
 end
