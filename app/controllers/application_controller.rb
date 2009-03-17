@@ -20,11 +20,9 @@ class ApplicationController < ActionController::Base
         RestrictedIp.delete(restricted)
       else
         restricted.update_attribute(:created_at, Time.now)
-        flash[:error] = "your ip is banned"
-        redirect_back_or_default(root_path) and return false
+        flash[:error] = "Your IP address is banned"
+        redirect_to root_path and return false
       end
-    else
-      true
     end
   end
 end

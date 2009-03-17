@@ -15,21 +15,20 @@ class SessionsController < ApplicationController
       # button. Uncomment if you understand the tradeoffs.
       # reset_session
       self.current_user = user
-      counts = LoginAttempt.find(:all, :conditions => { :remote_ip => request.remote_ip })
-      LoginAttempt.delete(counts) unless counts.blank?
+      attempts = LoginAttempt.find(:all, :conditions => { :remote_ip => request.remote_ip })
+      LoginAttempt.delete(attempts) unless attempts.blank?
       new_cookie_flag = (params[:remember_me] == "1")
       handle_remember_cookie! new_cookie_flag
       flash[:notice] = "Logged in successfully"
       redirect_back_or_default(root_path)
     else
-      @login       = params[:login]
-      @remember_me = params[:remember_me]
-      # note_failed_signin
-      unless last_login_attempt?
+      unless ip_is_restricted?
+        @login       = params[:login]
+        @remember_me = params[:remember_me]
         flash[:notice] = "Could not log you in with '#{@login}'"
         render :action => 'new'
       else
-        flash[:error] = "your ip is banned"
+        flash[:error] = "Your IP address is banned"
         redirect_to root_path
       end
     end
@@ -43,16 +42,14 @@ class SessionsController < ApplicationController
 
 protected
 
-  def last_login_attempt?
-    counts = LoginAttempt.find(:all, :conditions => { :remote_ip => request.remote_ip })
-    if !counts.blank? && counts.size >= 3
-      restriction = RestrictedIp.create(:remote_ip => request.remote_ip)
-      # maybe not best to destroy them all, for keeping records sake
-      LoginAttempt.delete(counts)
-      true
+  def ip_is_restricted?
+    attempts = LoginAttempt.find(:all, :conditions => { :remote_ip => request.remote_ip })
+    if !attempts.blank? && attempts.size >= 3
+      RestrictedIp.create(:remote_ip => request.remote_ip)
+      # maybe not best to destroy them all, for keeping records sake, maybe needs a state
+      LoginAttempt.delete(attempts) and return true
     else
-      attempt = LoginAttempt.create(:remote_ip => request.remote_ip, :user_agent => request.user_agent)
-      false
+      LoginAttempt.create(:remote_ip => request.remote_ip, :user_agent => request.user_agent) and return false
     end
   end
 
