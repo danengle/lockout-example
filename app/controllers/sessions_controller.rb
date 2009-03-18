@@ -14,9 +14,8 @@ class SessionsController < ApplicationController
       # protection if user resubmits an earlier form using back
       # button. Uncomment if you understand the tradeoffs.
       # reset_session
+      delete_login_attempts
       self.current_user = user
-      attempts = LoginAttempt.find(:all, :conditions => { :remote_ip => request.remote_ip })
-      LoginAttempt.delete(attempts) unless attempts.blank?
       new_cookie_flag = (params[:remember_me] == "1")
       handle_remember_cookie! new_cookie_flag
       flash[:notice] = "Logged in successfully"
@@ -28,8 +27,7 @@ class SessionsController < ApplicationController
         flash[:notice] = "Could not log you in with '#{@login}'"
         render :action => 'new'
       else
-        flash[:error] = "Your IP address is banned"
-        redirect_to root_path
+        flash_and_redirect
       end
     end
   end
@@ -42,15 +40,35 @@ class SessionsController < ApplicationController
 
 protected
 
+  def check_restricted_ips
+    restricted = RestrictedIp.find_by_remote_ip(request.remote_ip)
+    if !restricted.blank?
+      if restricted.created_at < Time.now.advance(:minutes => -1)
+        RestrictedIp.delete(restricted)
+      else
+        restricted.update_attribute(:created_at, Time.now)
+        flash_and_redirect
+      end
+    end
+  end
+
   def ip_is_restricted?
-    attempts = LoginAttempt.find(:all, :conditions => { :remote_ip => request.remote_ip })
+    attempts = LoginAttempt.scoped_by_remote_ip(request.remote_ip).all
     if !attempts.blank? && attempts.size >= 3
       RestrictedIp.create(:remote_ip => request.remote_ip)
-      # maybe not best to destroy them all, for keeping records sake, maybe needs a state
-      LoginAttempt.delete(attempts) and return true
+      LoginAttempt.delete(attempts)
     else
       LoginAttempt.create(:remote_ip => request.remote_ip, :user_agent => request.user_agent) and return false
     end
   end
 
+  def delete_login_attempts
+    attempts = LoginAttempt.scoped_by_remote_ip(request.remote_ip).all
+    LoginAttempt.delete(attempts) unless attempts.blank?
+  end
+  
+  def flash_and_redirect
+    flash[:error] = "Your IP address is banned"
+    redirect_to root_path and return false
+  end
 end

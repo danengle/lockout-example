@@ -13,16 +13,4 @@ class ApplicationController < ActionController::Base
     logged_in? && current_user.admin?
   end
   
-  def check_restricted_ips
-    restricted = RestrictedIp.find_by_remote_ip(request.remote_ip)
-    if !restricted.blank?
-      if restricted.created_at < Time.now.advance(:minutes => -1)
-        RestrictedIp.delete(restricted)
-      else
-        restricted.update_attribute(:created_at, Time.now)
-        flash[:error] = "Your IP address is banned"
-        redirect_to root_path and return false
-      end
-    end
-  end
 end
