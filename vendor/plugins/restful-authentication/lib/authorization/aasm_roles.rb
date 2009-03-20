@@ -56,7 +56,7 @@ module Authorization
       def do_activate
         @activated = true
         self.activated_at = Time.now.utc
-        self.deleted_at = self.activation_code = nil
+        self.deleted_at = self.activation_code = self.locked_out_at = nil
       end
     end # instance methods
   end

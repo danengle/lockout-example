@@ -8,27 +8,26 @@ class SessionsController < ApplicationController
 
   def create
     logout_keeping_session!
-    user = User.authenticate(params[:login], params[:password])
-    if user
-      # Protects against session fixation attacks, causes request forgery
-      # protection if user resubmits an earlier form using back
-      # button. Uncomment if you understand the tradeoffs.
-      # reset_session
-      delete_login_attempts
-      self.current_user = user
-      new_cookie_flag = (params[:remember_me] == "1")
-      handle_remember_cookie! new_cookie_flag
-      flash[:notice] = "Logged in successfully"
-      redirect_back_or_default(root_path)
-    else
-      unless ip_is_restricted?
-        @login       = params[:login]
-        @remember_me = params[:remember_me]
-        flash[:notice] = "Could not log you in with '#{@login}'"
-        render :action => 'new'
-      else
-        flash_and_redirect
+    @login       = params[:login]
+    @remember_me = params[:remember_me]
+    @user = User.with_allowed_states.find_by_login(@login)
+    if @user
+      case @user.aasm_current_state
+      when :suspended
+        flash_and_render("Your account is suspended")
+      when :locked_out
+        if @user.lock_out_ended?
+          LoginAttempt.delete(@user.login_attempts)
+          @user.end_lock_out!
+          proceed_to_login
+        else
+          flash_and_render("Your account is locked out")
+        end
+      else # is active
+        proceed_to_login
       end
+    else
+      flash_and_render
     end
   end
 
@@ -39,7 +38,30 @@ class SessionsController < ApplicationController
   end
 
 protected
-
+  
+  def proceed_to_login
+    if @user.authenticated?(params[:password])
+      complete_login
+    else
+      @user.login_attempts.create(:remote_ip => request.remote_ip, :user_agent => request.user_agent)
+      if @user.max_login_attempts?
+        @user.lock_out!
+        flash_and_render("Your account is locked out")
+      else
+        flash_and_render
+      end
+    end
+  end
+  
+  def complete_login
+    self.current_user = @user
+    LoginAttempt.delete(self.current_user.login_attempts)
+    new_cookie_flag = (params[:remember_me] == "1")
+    handle_remember_cookie! new_cookie_flag
+    flash[:notice] = "Logged in successfully"
+    redirect_back_or_default(root_path)
+  end
+  
   def check_restricted_ips
     restricted = RestrictedIp.find_by_remote_ip(request.remote_ip)
     if !restricted.blank?
@@ -51,20 +73,10 @@ protected
       end
     end
   end
-
-  def ip_is_restricted?
-    attempts = LoginAttempt.scoped_by_remote_ip(request.remote_ip).all
-    if !attempts.blank? && attempts.size >= 3
-      RestrictedIp.create(:remote_ip => request.remote_ip)
-      LoginAttempt.delete(attempts)
-    else
-      LoginAttempt.create(:remote_ip => request.remote_ip, :user_agent => request.user_agent) and return false
-    end
-  end
-
-  def delete_login_attempts
-    attempts = LoginAttempt.scoped_by_remote_ip(request.remote_ip).all
-    LoginAttempt.delete(attempts) unless attempts.blank?
+  
+  def flash_and_render(message = "Incorrect username or password")
+    flash[:notice] = message
+    render :action => 'new'
   end
   
   def flash_and_redirect

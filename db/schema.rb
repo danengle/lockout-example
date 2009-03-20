@@ -9,13 +9,14 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20090317031203) do
+ActiveRecord::Schema.define(:version => 20090320025507) do
 
   create_table "login_attempts", :force => true do |t|
     t.string   "remote_ip"
     t.string   "user_agent"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "user_id"
   end
 
   add_index "login_attempts", ["remote_ip"], :name => "index_login_attempts_on_remote_ip"
@@ -50,6 +51,7 @@ ActiveRecord::Schema.define(:version => 20090317031203) do
     t.string   "state",                                    :default => "passive"
     t.string   "role",                                     :default => "member"
     t.datetime "deleted_at"
+    t.datetime "locked_out_at"
   end
 
   add_index "users", ["login"], :name => "index_users_on_login", :unique => true
