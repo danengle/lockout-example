@@ -1,12 +1,11 @@
 require 'digest/sha1'
-
 class User < ActiveRecord::Base
   include Authentication
   include Authentication::ByPassword
   include Authentication::ByCookieToken
   include Authorization::AasmRoles
 
-  OPTIONS = {
+  LOCKOUT_OPTIONS = {
     :lockout_period => 1,
     :login_attempts => 3,
     :attempt_window => 4
@@ -43,11 +42,11 @@ class User < ActiveRecord::Base
   attr_accessible :login, :email, :name, :password, :password_confirmation
 
   def max_login_attempts?
-    self.login_attempts.by_attempt_window(OPTIONS[:attempt_window]).all.size > OPTIONS[:login_attempts]
+    self.login_attempts.by_attempt_window(LOCKOUT_OPTIONS[:attempt_window]).all.size > LOCKOUT_OPTIONS[:login_attempts]
   end
   
   def lock_out_ended?
-    self.locked_out_at < (Time.now - OPTIONS[:lockout_period].minutes)
+    self.locked_out_at < (Time.now - LOCKOUT_OPTIONS[:lockout_period].minutes)
   end
   
   def login=(value)

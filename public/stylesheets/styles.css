@@ -1,8 +1,29 @@
-
-#user-bar-greeting, #user-bar-action {
-	float:right;
+#container {
+	width:800px;
+	margin:0 auto;
+}
+#header {
 	
+}
+
+#user-bar-greeting, #user-bar-action, .float_right{
+	float:right;	
 }
 #content {
 	margin-top:24px;
+}
+.notice, .error, .success {
+	padding:8px;
+}
+.notice {
+	border:1px solid #F2E640; 
+	background-color:#fcf9ce;
+}
+.error {
+	border:1px solid #d45342;
+	background-color:#f6cbca;
+}
+.success {
+	background-color:#E6EFC2;
+	border:1px solid #C6D880;
 }

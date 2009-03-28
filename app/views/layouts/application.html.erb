@@ -9,14 +9,23 @@
   <%= stylesheet_link_tag "styles" %>
 </head>
 <body>
-<div id="user-bar">
-  <%= render :partial => 'users/user_bar' %>
-</div>
-<div id="content">
-  <% flash.each do |key, value| %>
-    <div class="<%= key %>"><%= value %></div>
-  <% end %>
-  <%= yield  %>
+<div id="container">
+  <div id="header">
+    <div id="user-bar">
+      <%= render :partial => 'users/user_bar' %>
+    </div>
+    <h1><%= link_to 'Logo Here', root_path %></h1>
+    <h3>witty subtitle here</h3>
+  </div>
+  <div id="content">
+    <% flash.each do |key, value| %>
+      <div class="<%= key %>"><%= value %></div>
+    <% end %>
+    <%= yield  %>  
+  </div>
+  <div id="footer">
+    <p>copyright notice</p>
+  </div>
 </div>
 </body>
 </html>

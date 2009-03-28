@@ -8,17 +8,6 @@ class ApplicationController < ActionController::Base
   # Scrub sensitive parameters from your log
   # filter_parameter_logging :password
   include AuthenticatedSystem
-
-  before_filter :check
-  
-  def check
-    logger.info { "\n\ncontroller name = #{self.controller_name}\n#{self.action_name}\n" }
-    if self.controller_name == 'posts'
-      logger.info { "is posts" }
-    else
-      logger.info { "is NOT posts" }
-    end
-  end
   
   def only_admin
     logged_in? && current_user.admin?

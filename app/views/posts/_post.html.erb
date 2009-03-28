@@ -1,0 +1,13 @@
+<div class="post">
+  <h2><%= link_to post.title, post %></h2>
+  <p>
+    <%= post.created_at.to_s(:short) %>
+    <% if is_admin? %>
+      <%= link_to 'Edit', edit_post_path(post) %>
+      <%= link_to 'Destroy', post, :confirm => 'Are you sure?', :method => :delete %>  
+    <% end %>
+  </p>
+  <div class="post_body">
+    <%= post.body %>
+  </div>
+</div>
