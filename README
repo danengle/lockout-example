@@ -1,1 +1,8 @@
-TODO
+This is a sample app that extends some of what restful_authentication provides in order to lockout user accounts and prevent brute force password guessing.
+
+I wrote about it on my blog at http://danengle.us/2009/03/adding-some-additional-security-measures-to-restful_authentication/
+
+It still needs a couple more features to polish it off like...
+- Ban users by IP after multiple account lockouts
+- Allow users to reset password if they lock themselves out
+- Integrate into restful_authentication so you can pass a --lockout option and have this code generated automatically
